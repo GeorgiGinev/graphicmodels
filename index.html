@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Load Balancing with Colored Graph Model</title>
+    <style>
+        /* Add custom styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        #results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+<h1>Load Balancing with Colored Graph Model</h1>
+<div id="results">
+    <!-- The results will be displayed here -->
+</div>
+
+<script>
+    // Define the hypercube topology as an adjacency list
+    function createHypercubeTopology(dimension) {
+        const size = Math.pow(2, dimension);
+        const adjacencyList = new Map();
+
+        // Initialize servers
+        for (let i = 0; i < size; i++) {
+            adjacencyList.set(i, []);
+        }
+
+        // Connect servers in the hypercube
+        for (let i = 0; i < size; i++) {
+            for (let j = 0; j < dimension; j++) {
+                const neighbor = i ^ (1 << j);
+                adjacencyList.get(i).push(neighbor);
+            }
+        }
+
+        return adjacencyList;
+    }
+
+    // Define a function to balance load in the hypercube cluster
+    function balanceLoad(clusterSize, dimension, numTasks) {
+        // Create the hypercube topology
+        const adjacencyList = createHypercubeTopology(dimension);
+
+        // Initialize server queues and tasks
+        const serverQueues = Array(clusterSize).fill(0);
+
+        // Assign all tasks to server 0 initially
+        serverQueues[0] = numTasks;
+
+        // Iterate through each server and redistribute load
+        let migrations = 0;
+        const maxQueueLength = 5;
+
+        for (var i = 0; i < clusterSize; i++) {
+            console.log('while');
+            while (serverQueues[i] > maxQueueLength) {
+                const neighbors = adjacencyList.get(i);
+                // Try to find a neighbor with available capacity
+                for (const neighbor of neighbors) {
+                    if (serverQueues[neighbor] < maxQueueLength) {
+                        // Migrate tasks to the neighbor
+                        serverQueues[i]--;
+                        serverQueues[neighbor]++;
+                        migrations++;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Calculate average load and percentage deviation
+        /*const averageLoad = numTasks / clusterSize;
+        const deviations = serverQueues.map(queue => {
+            return Math.abs(queue - averageLoad) / averageLoad * 100;
+        });
+
+        // Display the results
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.innerHTML = `
+                <p>Server queues: ${serverQueues.join(', ')}</p>
+                <p>Average load: ${averageLoad.toFixed(2)}</p>
+                <p>Percentage deviation of each server: ${deviations.map(dev => dev.toFixed(2)).join(', ')}</p>
+                <p>Total migrations performed: ${migrations}</p>
+            `;*/
+    }
+
+    // Define parameters
+    const clusterSize = Math.pow(2, 4); // 4D hypercube (2^4 = 16 servers)
+    const dimension = 4;
+    const numTasks = 100;
+
+    // Call the load balancing function
+    balanceLoad(clusterSize, dimension, numTasks);
+</script>
+</body>
+
+</html>
