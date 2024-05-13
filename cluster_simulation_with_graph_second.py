@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 import random
+from collections import deque
 
 global_current_task_index = 0
 
@@ -21,49 +22,42 @@ def initialize_graph(dimensions):
         G.nodes[i]['neighbors'] = neighbors
     return G
 
-def distribute_tasks(G, tasks, queue_limit):
-    nodes = list(G.nodes(data=True))
+def distribute_tasks(G, start_server_id, tasks, queue_limit):
+    # Опашка за BFS - "Breadth-First Search" (Търсене в широчина)
+    queue = deque([start_server_id])
+    # Множество за следене на посетените сървъри
+    visited = set([start_server_id])
+    # Индекс на текущата задача за разпределение
     task_index = 0
-    print('nodes : ', nodes);
-    while task_index < len(tasks):
-        # nodes.sort(key=lambda x: (x[1]['tasks'], x[1]['load']))  # сортиране по брой задачи и натоварване
 
-        for node, data in nodes:
-            if data['tasks'] < queue_limit:
-                data['load'] += tasks[task_index]
-                data['task_list'].append(tasks[task_index])  # добавяне на задачата към списъка
-                data['tasks'] += 1
-                task_index += 1
-                break
-        else:
-            print("Warning: Всички задачи не могат да бъдат направени.")
-            break
+    # Обхождане докато има сървъри в опашката и задачи за разпределение
+    while queue and task_index < len(tasks):
+        current_server = queue.popleft()
+        # Получаване на данни за текущия сървър
+        server_data = G.nodes[current_server]
+
+        # Разпределяне на задачите на текущия сървър, докато не се достигне лимита
+        while task_index < len(tasks) and server_data['tasks'] < queue_limit:
+            server_data['load'] += tasks[task_index]
+            server_data['task_list'].append(tasks[task_index])
+            server_data['tasks'] += 1
+            task_index += 1
+
+        # Добавяне на съседите на текущия сървър в опашката, ако не са били посетени
+        for neighbor in G.neighbors(current_server):
+            if neighbor not in visited:
+                queue.append(neighbor)
+                visited.add(neighbor)
+
+    # Съобщение, ако има останали неразпределени задачи
+    if task_index < len(tasks):
+        print("Warning: Някои задачи не могат да бъдат разпределени поради достигане на лимитите на всички сървъри.")
 
 def calculate_deviations(G):
     loads = [data['load'] for node, data in G.nodes(data=True)]
     mean_load = np.mean(loads)
     deviations = [100 * abs(load - mean_load) / mean_load if mean_load > 0 else 0 for load in loads]
     return np.mean(deviations), deviations
-
-def distribute_tasts_recurse(current_node, tasks, queue_limit, nodes):
-    global global_current_task_index
-    
-    if global_current_task_index >= len(tasks):
-        return
-
-    nodes = list(G.nodes(data=True))
-
-    if current_node['tasks'] < queue_limit:
-        current_node['load'] += tasks[global_current_task_index]
-        current_node['task_list'].append(tasks[global_current_task_index])  # добавяне на задачата към списъка
-        current_node['tasks'] += 1
-        global_current_task_index += 1
-    else:
-        tasks[global_current_task_index] += 1
-
-    current_neighbor_index = 0
-    while current_neighbor_index < len(current_node['task_list']):
-        return distribute_tasts_recurse(nodes[current_node['neighbors'][current_neighbor_index]][1], tasks, queue_limit, nodes)
 
 def visualize_graph(G):
     colors = [data['color'] for node, data in G.nodes(data=True)]
@@ -85,7 +79,7 @@ def gauss_generate_tasts(n_tasks, avg, between):
     return samples
 
 # Инициализация на графа
-dimensions = 3  # за пример, използваме по-малък размер за лесно визуализиране
+dimensions = 6  # за пример, използваме по-малък размер за лесно визуализиране
 G = initialize_graph(dimensions)
 
 # Оцветяване на върховете
@@ -94,11 +88,15 @@ for node, color in zip(G.nodes(), colors):
     G.nodes[node]['color'] = color
 
 # Разпределение на задачите
-n_tasks = 23
+n_tasks = 200
 queue_limit = 5
 tasks = gauss_generate_tasts(n_tasks, 7.5, 1.5)
-print('tasts' , tasks)
-distribute_tasts_recurse(list(G.nodes(data=True))[0][1], tasks, queue_limit, G)
+print('Задачи : ' , tasks)
+# Определяне на стартовия сървър
+start_server_id = 0  # Примерен стартов сървър
+
+# Разпределение на задачите
+distribute_tasks(G, start_server_id, tasks, queue_limit)
 
 # Изчисление на отклоненията
 average_deviation, deviations = calculate_deviations(G)
