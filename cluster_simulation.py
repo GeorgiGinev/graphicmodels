@@ -49,6 +49,7 @@ def distribute_tasks(cluster, tasks, queue_limit, clusterTasks):
                     print("Таскът, от който започва невъзможността : ", task_index)
                     break  # Излизаме от цикъла, ако всички сървъри са пълни
 
+# Калкулиране на средно % отклонение на товара от средната стойност на изчислителния товар
 def calculate_deviations(cluster):
     mean_load = np.mean(cluster)
     deviations = 100 * np.abs(cluster - mean_load) / mean_load
@@ -56,10 +57,17 @@ def calculate_deviations(cluster):
     return average_deviation
 
 # Параметри на задачата
-dimensions = 4  # Изберете 4 или 6 за размерност на куба
-n_tasks = 100  # Изберете 100 или 200 за брой задачи
+dimensions = 6  # Изберете 4 или 6 за размерност на куба
+n_tasks = 200  # Изберете 100 или 200 за брой задачи
 queue_limit = 5
-tasks = np.random.normal(7.5, 1.15, n_tasks)
+tasks = []
+# Генериране на задачи
+while len(tasks) < n_tasks:
+    task = np.random.normal(7.5, 1.5)
+    if 5 <= task <= 10:
+        tasks.append(task)
+
+print("Задачи : ", tasks)
 
 # Инициализация и разпределение на задачите
 cluster = initialize_cluster(dimensions)
