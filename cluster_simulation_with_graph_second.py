@@ -32,6 +32,10 @@ def distribute_tasks(G, start_server_id, tasks, queue_limit):
 
     # Обхождане докато има сървъри в опашката и задачи за разпределение
     while queue and task_index < len(tasks):
+        # Като задачите се прехвърлят на следващия сървър се добавя 1 секунда
+        if task_index > queue_limit:
+            tasks[task_index] += 1
+            
         current_server = queue.popleft()
         # Получаване на данни за текущия сървър
         server_data = G.nodes[current_server]
