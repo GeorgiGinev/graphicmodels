@@ -11,6 +11,7 @@ from connection import Connection
 from task import Task
 
 threadInterval = 1
+programRinningTimer = 0
 numberOfTasks = 100
 dim = 4
 thread = None
@@ -77,9 +78,9 @@ def showHypercube(hypercube: List[Server], thread: Timer | None, stopServer: boo
         thread.cancel()
 
     completedTasks = 0
+    global programRinningTimer
+    programRinningTimer+=1
 
-    global areServersWorking 
-    areServersWorking = not stopServer
     #print('areServersWorking ', areServersWorking)
 
     for i, neighbour in enumerate(hypercube):
@@ -94,6 +95,10 @@ def showHypercube(hypercube: List[Server], thread: Timer | None, stopServer: boo
     if(not stopServer):
         thread = Timer(threadInterval, showHypercube, [hypercube, thread, completedTasks == numberOfTasks])
         thread.start()
+    else:
+        print(f'Програмата е работела {programRinningTimer} секунди')
+        global areServersWorking 
+        areServersWorking = not stopServer
 
 def turnOnServers(hypercube: List[Server]):
     for index, server in enumerate(hypercube):
@@ -124,7 +129,7 @@ def visualize(hypercubeGraph, dimensions):
 # Главните стъпки
 tasks = createTasks(numberOfTasks)
 
-hypercube = createCube(dim)
+hypercube: List[Server] = createCube(dim)
 turnOnServers(hypercube)
 Timer(threadInterval, showHypercube, [hypercube, thread]).start()
 hypercube[0].addTasks(tasks)
@@ -132,7 +137,16 @@ hypercube[0].addTasks(tasks)
 dontShowGraph = True
 while(dontShowGraph):
     if(not areServersWorking):
-        print('dont')
+        avgTasksPerServer = numberOfTasks / len(hypercube)
+        print(f'Изчисляване на средния товар в клъстера : {avgTasksPerServer}')
+        
+        avgPerServer = 0
+        for index, server in enumerate(hypercube):
+            avgPerServer += len(server.completedTasks) - avgTasksPerServer
+            print(f'Средно % отклонение на сървър {server.id} : {len(server.completedTasks) - avgTasksPerServer}%')
+            
+        print(f'Изчисляване на средното процентно отклонение : {avgPerServer / len(hypercube)}%') 
+
         graph = generateGraph(hypercube)
         visualize(graph, dim)
         dontShowGraph = False
