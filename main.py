@@ -13,7 +13,7 @@ from task import Task
 threadInterval = 1
 programRinningTimer = 0
 numberOfTasks = 100
-dim = 4
+dim = 6
 thread = None
 colors = [
     'red',
@@ -102,6 +102,7 @@ def showHypercube(hypercube: List[Server], thread: Timer | None, stopServer: boo
 
 def turnOnServers(hypercube: List[Server]):
     for index, server in enumerate(hypercube):
+        print('server ', server)
         server.turnOnServer()
 
 # Създаваме граф
@@ -129,7 +130,7 @@ def visualize(hypercubeGraph, dimensions):
 # Главните стъпки
 tasks = createTasks(numberOfTasks)
 
-hypercube: List[Server] = createCube(dim)
+hypercube = createCube(dim)
 turnOnServers(hypercube)
 Timer(threadInterval, showHypercube, [hypercube, thread]).start()
 hypercube[0].addTasks(tasks)
@@ -143,9 +144,9 @@ while(dontShowGraph):
         avgPerServer = 0
         for index, server in enumerate(hypercube):
             avgPerServer += len(server.completedTasks) - avgTasksPerServer
-            print(f'Средно % отклонение на сървър {server.id} : {len(server.completedTasks) - avgTasksPerServer}%')
+            print(f'Средно % отклонение на сървър {server.id} : {len(server.completedTasks)/(avgTasksPerServer/100)}%')
             
-        print(f'Изчисляване на средното процентно отклонение : {avgPerServer / len(hypercube)}%') 
+        # print(f'Изчисляване на средното процентно отклонение : {avgPerServer / len(hypercube)}%') 
 
         graph = generateGraph(hypercube)
         visualize(graph, dim)
